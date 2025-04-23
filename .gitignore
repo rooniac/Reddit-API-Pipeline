@@ -1,0 +1,52 @@
+# Các thư mục cần bỏ qua
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyCharm files
+.idea/
+*.iml
+*.iws
+*.ipr
+.idea_modules/
+
+# Thư mục logs và data
+logs/*
+data/raw/*
+data/processed/*
+data/output/*
+
+# Thư mục cache và database
+cache-directory/
+*.db
+*.sqlite3
+
+# Tệp môi trường
+.env
+.venv
+venv/
+ENV/
+
+# Các file Docker cụ thể
+*.env.docker
+
+# File cấu hình cụ thể cho người dùng
+config/local_settings.py

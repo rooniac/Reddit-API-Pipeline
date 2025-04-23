@@ -1,0 +1,84 @@
+{
+    "technical": [
+        {
+            "name": "data modeling",
+            "aliases": [
+                "modeling",
+                "data model"
+            ],
+            "weight": 0.8
+        },
+        {
+            "name": "etl",
+            "aliases": [
+                "extract transform load",
+                "data pipeline"
+            ],
+            "weight": 0.9
+        },
+        {
+            "name": "database design",
+            "aliases": [
+                "db design",
+                "data schema"
+            ],
+            "weight": 0.6
+        },
+        {
+            "name": "data warehousing",
+            "aliases": [
+                "data warehouse"
+            ],
+            "weight": 0.7
+        }
+    ],
+    "soft_skills": [
+        {
+            "name": "problem solving",
+            "aliases": [
+                "analytical thinking"
+            ],
+            "weight": 0.7
+        },
+        {
+            "name": "communication",
+            "aliases": [
+                "team communication"
+            ],
+            "weight": 0.6
+        },
+        {
+            "name": "teamwork",
+            "aliases": [
+                "collaboration"
+            ],
+            "weight": 0.6
+        }
+    ],
+    "certifications": [
+        {
+            "name": "aws certified",
+            "aliases": [
+                "aws cert",
+                "amazon web services"
+            ],
+            "weight": 0.8
+        },
+        {
+            "name": "azure certified",
+            "aliases": [
+                "azure cert",
+                "microsoft azure"
+            ],
+            "weight": 0.7
+        },
+        {
+            "name": "gcp certified",
+            "aliases": [
+                "gcp cert",
+                "google cloud platform"
+            ],
+            "weight": 0.7
+        }
+    ]
+}

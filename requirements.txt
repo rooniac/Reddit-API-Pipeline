@@ -1,0 +1,37 @@
+# Reddit API
+praw==7.7.0
+
+# Kafka
+kafka-python==2.0.2
+
+# Database
+psycopg2==2.9.6
+psycopg2-binary==2.9.6
+sqlalchemy==2.0.19
+
+# Data processing
+pandas==2.0.3
+numpy==1.24.3
+
+# Text processing & analysis
+nltk==3.8.1
+textblob==0.17.1
+rapidfuzz==3.0.0
+scikit-learn==1.2.2
+wordcloud==1.9.2
+
+# Visualization
+dash==2.11.1
+dash-bootstrap-components==1.4.1
+plotly==5.15.0
+matplotlib==3.7.2
+networkx==3.1
+
+# Caching
+Flask-Caching==2.0.2
+
+# Utilities
+python-dotenv==1.0.0
+
+# Docker (optional)
+docker-compose==1.29.2

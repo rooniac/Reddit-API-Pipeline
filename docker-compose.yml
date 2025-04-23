@@ -1,0 +1,49 @@
+version: '3'
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    networks:
+      - reddit_network
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: localhost
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CREATE_TOPICS: "reddit_posts:1:1,reddit_comments:1:1"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - reddit_network
+
+  postgres:
+    image: postgres:14
+    container_name: postgres_reddit
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: reddit_data
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - reddit_network
+
+networks:
+  reddit_network:
+    driver: bridge
+volumes:
+  postgres_data:

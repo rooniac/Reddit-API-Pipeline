@@ -1,0 +1,72 @@
+{
+    "big_data": [
+        {
+            "name": "hadoop",
+            "aliases": [
+                "hdp",
+                "apache hadoop"
+            ],
+            "weight": 0.8
+        },
+        {
+            "name": "spark",
+            "aliases": [
+                "pyspark",
+                "apache spark"
+            ],
+            "weight": 0.9
+        },
+        {
+            "name": "flink",
+            "aliases": [
+                "apache flink"
+            ],
+            "weight": 0.7
+        },
+        {
+            "name": "hive",
+            "aliases": [
+                "apache hive"
+            ],
+            "weight": 0.6
+        },
+        {
+            "name": "pig",
+            "aliases": [
+                "apache pig"
+            ],
+            "weight": 0.5
+        }
+    ],
+    "databases": [
+        {
+            "name": "postgresql",
+            "aliases": [
+                "postgres",
+                "psql"
+            ],
+            "weight": 0.9
+        },
+        {
+            "name": "mysql",
+            "aliases": [
+                "mariadb"
+            ],
+            "weight": 0.8
+        },
+        {
+            "name": "mongodb",
+            "aliases": [
+                "mongo"
+            ],
+            "weight": 0.7
+        },
+        {
+            "name": "cassandra",
+            "aliases": [
+                "apache cassandra"
+            ],
+            "weight": 0.6
+        }
+    ]
+}
