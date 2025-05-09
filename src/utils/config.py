@@ -32,7 +32,3 @@ SUBREDDITS = ["dataengineering", "datascience", "bigdata", "MachineLearning"]
 # Default limits for data collection
 DEFAULT_POST_LIMIT = 100
 
-# Cấu hình Spark
-SPARK_MASTER_URL = "local[*]"  # Sử dụng tất cả cores có sẵn trên máy local
-SPARK_DRIVER_MEMORY = "4g"     # Bộ nhớ cho driver process
-SPARK_EXECUTOR_MEMORY = "4g"   # Bộ nhớ cho mỗi executor

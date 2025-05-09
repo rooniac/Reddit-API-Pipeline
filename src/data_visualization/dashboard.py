@@ -104,9 +104,8 @@ class RedditDashboard:
         Returns:
             html.Div: Layout của dashboard
         """
-        # Tạo layout sử dụng Bootstrap với thiết kế cải tiến
         return html.Div([
-            # Header chuyên nghiệp với logo và tiêu đề
+            # Header
             html.Div([
                 dbc.Container([
                     dbc.Row([
@@ -628,7 +627,7 @@ class RedditDashboard:
                                             min=0.1,
                                             max=0.9,
                                             step=0.1,
-                                            value=0.3,
+                                            value=0.1,
                                             marks={i / 10: str(i / 10) for i in range(1, 10)},
                                             className="mt-2"
                                         ),
@@ -752,7 +751,7 @@ class RedditDashboard:
                         ])
                     ], label="Bảng xếp hạng kỹ năng", className="p-3"),
 
-                    # Tab 6: Phân tích tình cảm về công nghệ - cải tiến layout
+                    # Tab 6: Phân tích tình cảm về công nghệ
                     dbc.Tab([
                         dbc.Row([
                             dbc.Col([
@@ -2180,7 +2179,7 @@ class RedditDashboard:
             logger.error(f"Lỗi khi lấy dữ liệu xu hướng theo subreddit: {str(e)}")
             return pd.DataFrame(columns=["subreddit_name", "tech_name", "mentions", "avg_sentiment"])
 
-    def _get_tech_correlation_data(self, start_date, end_date, threshold=0.3):
+    def _get_tech_correlation_data(self, start_date, end_date, threshold=0.1):
         """
         Lấy dữ liệu tương quan công nghệ
 
@@ -2200,21 +2199,34 @@ class RedditDashboard:
         if cached_data is not None:
             return cached_data
 
+        # query = """
+        #     SELECT
+        #         tech_name_1,
+        #         tech_name_2,
+        #         correlation_score
+        #     FROM
+        #         reddit_data.tech_correlation
+        #     WHERE
+        #         analyzed_date BETWEEN %s AND %s
+        #         AND correlation_score >= %s
+        #     ORDER BY
+        #         correlation_score DESC
+        # """
         query = """
-            SELECT
-                tech_name_1,
-                tech_name_2,
-                correlation_score
-            FROM
-                reddit_data.tech_correlation
-            WHERE
-                analyzed_date BETWEEN %s AND %s
-                AND correlation_score >= %s
-            ORDER BY
-                correlation_score DESC
-        """
+                    SELECT
+                        tech_name_1,
+                        tech_name_2,
+                        correlation_score
+                    FROM
+                        reddit_data.tech_correlation
+                    WHERE
+                        correlation_score >= %s
+                    ORDER BY
+                        correlation_score DESC
+                """
 
-        params = [start_date, end_date, threshold]
+        # params = [start_date, end_date, threshold]
+        params = [threshold]
 
         try:
             df = pd.read_sql(query, self.db_connection, params=params)
@@ -3386,24 +3398,40 @@ class RedditDashboard:
                 return html.Div("Không thể xác định công nghệ từ lựa chọn.")
 
             # Truy vấn dữ liệu tương quan
+            # query = """
+            #     SELECT
+            #         CASE
+            #             WHEN tech_name_1 = %s THEN tech_name_2
+            #             ELSE tech_name_1
+            #         END as related_tech,
+            #         correlation_score
+            #     FROM
+            #         reddit_data.tech_correlation
+            #     WHERE
+            #         (tech_name_1 = %s OR tech_name_2 = %s)
+            #         AND analyzed_date BETWEEN %s AND %s
+            #     ORDER BY
+            #         correlation_score DESC
+            #     LIMIT 10
+            # """
             query = """
-                        SELECT 
-                            CASE 
-                                WHEN tech_name_1 = %s THEN tech_name_2
-                                ELSE tech_name_1
-                            END as related_tech,
-                            correlation_score
-                        FROM 
-                            reddit_data.tech_correlation
-                        WHERE 
-                            (tech_name_1 = %s OR tech_name_2 = %s)
-                            AND analyzed_date BETWEEN %s AND %s
-                        ORDER BY 
-                            correlation_score DESC
-                        LIMIT 10
-                    """
+                SELECT 
+                    CASE 
+                        WHEN tech_name_1 = %s THEN tech_name_2
+                        ELSE tech_name_1
+                    END as related_tech,
+                    correlation_score
+                FROM 
+                    reddit_data.tech_correlation
+                WHERE 
+                    (tech_name_1 = %s OR tech_name_2 = %s)
+                ORDER BY 
+                    correlation_score DESC
+                LIMIT 10
+            """
 
-            params = [tech_name, tech_name, tech_name, start_date, end_date]
+            # params = [tech_name, tech_name, tech_name, start_date, end_date]
+            params = [tech_name, tech_name, tech_name]
 
             # Thực hiện truy vấn
             cursor = self.db_connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
