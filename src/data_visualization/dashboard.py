@@ -1925,13 +1925,134 @@ class RedditDashboard:
             logger.error(f"Lỗi khi kiểm tra bảng tech_trends: {str(e)}")
             return False
 
+    # def _get_tech_growth_data(self, start_date, end_date, min_mentions, period_weeks=4):
+    #     """
+    #     Lấy dữ liệu tăng trưởng công nghệ từ database
+    #
+    #     Args:
+    #         start_date (str): Ngày bắt đầu
+    #         end_date (str): Ngày kết thúc
+    #         min_mentions (int): Số lần đề cập tối thiểu
+    #         period_weeks (int): Số tuần để so sánh
+    #
+    #     Returns:
+    #         pd.DataFrame: Dữ liệu tăng trưởng
+    #     """
+    #     # Tạo cache key
+    #     cache_key = f"tech_growth_{start_date}_{end_date}_{min_mentions}_{period_weeks}"
+    #
+    #     # Kiểm tra cache
+    #     cached_data = self.cache.get(cache_key)
+    #     if cached_data is not None:
+    #         return cached_data
+    #
+    #     try:
+    #         # Kiểm tra xem bảng có dữ liệu không
+    #         has_data = self._check_tech_trends_table()
+    #         if not has_data:
+    #             logger.warning("Bảng tech_trends không có dữ liệu")
+    #             return pd.DataFrame(columns=["tech_name", "current_mentions", "previous_mentions", "growth_percent"])
+    #
+    #         # Sử dụng SQL thuần với mệnh đề WITH
+    #         # Đảm bảo rằng start_date và end_date đúng định dạng
+    #         try:
+    #             # Cố gắng chuyển đổi định dạng ngày nếu cần
+    #             from datetime import datetime
+    #             if isinstance(start_date, str) and 'T' in start_date:
+    #                 start_date = start_date.split('T')[0]
+    #             if isinstance(end_date, str) and 'T' in end_date:
+    #                 end_date = end_date.split('T')[0]
+    #         except:
+    #             pass
+    #
+    #         # Xây dựng query để lấy dữ liệu hiện tại và kỳ trước
+    #         query = """
+    #             WITH date_params AS (
+    #                 SELECT
+    #                     %s::date as start_date,
+    #                     %s::date as end_date
+    #             ),
+    #             current_period AS (
+    #                 SELECT
+    #                     t.tech_name,
+    #                     SUM(t.mention_count) as current_mentions
+    #                 FROM
+    #                     reddit_data.tech_trends t,
+    #                     date_params d
+    #                 WHERE
+    #                     t.week_start BETWEEN d.start_date AND d.end_date
+    #                 GROUP BY
+    #                     t.tech_name
+    #                 HAVING
+    #                     SUM(t.mention_count) >= %s
+    #             ),
+    #             dates AS (
+    #                 SELECT
+    #                     start_date,
+    #                     end_date,
+    #                     (start_date - (end_date - start_date))::date as prev_start_date,
+    #                     start_date::date - interval '1 day' as prev_end_date
+    #                 FROM date_params
+    #             ),
+    #             previous_period AS (
+    #                 SELECT
+    #                     t.tech_name,
+    #                     SUM(t.mention_count) as previous_mentions
+    #                 FROM
+    #                     reddit_data.tech_trends t,
+    #                     dates d
+    #                 WHERE
+    #                     t.week_start BETWEEN d.prev_start_date AND d.prev_end_date
+    #                 GROUP BY
+    #                     t.tech_name
+    #             )
+    #             SELECT
+    #                 cp.tech_name,
+    #                 cp.current_mentions,
+    #                 COALESCE(pp.previous_mentions, 0) as previous_mentions,
+    #                 CASE
+    #                     WHEN COALESCE(pp.previous_mentions, 0) = 0 THEN NULL
+    #                     ELSE ((cp.current_mentions - pp.previous_mentions)::FLOAT / pp.previous_mentions * 100)
+    #                 END as growth_percent
+    #             FROM
+    #                 current_period cp
+    #                 LEFT JOIN previous_period pp ON cp.tech_name = pp.tech_name
+    #             ORDER BY
+    #                 growth_percent DESC NULLS LAST
+    #         """
+    #
+    #         # Log parameters
+    #         logger.info(
+    #             f"Executing query with params: start_date={start_date}, end_date={end_date}, min_mentions={min_mentions}")
+    #
+    #         # Thực hiện truy vấn
+    #         df = pd.read_sql(query, self.db_connection, params=[start_date, end_date, min_mentions])
+    #         logger.info(f"Query returned {len(df)} rows")
+    #
+    #         # Log sample data
+    #         if not df.empty:
+    #             logger.info(f"Sample data: {df.head(3).to_dict('records')}")
+    #
+    #         # Xử lý các giá trị NULL trong growth_percent
+    #         df['growth_percent'] = df['growth_percent'].fillna(100)  # Giả sử tăng trưởng 100% cho các công nghệ mới
+    #
+    #         # Lưu vào cache
+    #         self.cache.set(cache_key, df, timeout=300)  # Cache trong 5 phút
+    #
+    #         return df
+    #     except Exception as e:
+    #         logger.error(f"Lỗi khi lấy dữ liệu tăng trưởng công nghệ: {str(e)}")
+    #         import traceback
+    #         logger.error(traceback.format_exc())
+    #         return pd.DataFrame(columns=["tech_name", "current_mentions", "previous_mentions", "growth_percent"])
+
     def _get_tech_growth_data(self, start_date, end_date, min_mentions, period_weeks=4):
         """
         Lấy dữ liệu tăng trưởng công nghệ từ database
 
         Args:
-            start_date (str): Ngày bắt đầu
-            end_date (str): Ngày kết thúc
+            start_date (str): Ngày bắt đầu (không sử dụng trong phiên bản mới)
+            end_date (str): Ngày kết thúc (sẽ dùng làm mốc so sánh)
             min_mentions (int): Số lần đề cập tối thiểu
             period_weeks (int): Số tuần để so sánh
 
@@ -1939,7 +2060,7 @@ class RedditDashboard:
             pd.DataFrame: Dữ liệu tăng trưởng
         """
         # Tạo cache key
-        cache_key = f"tech_growth_{start_date}_{end_date}_{min_mentions}_{period_weeks}"
+        cache_key = f"tech_growth_{end_date}_{min_mentions}_{period_weeks}"
 
         # Kiểm tra cache
         cached_data = self.cache.get(cache_key)
@@ -1947,94 +2068,90 @@ class RedditDashboard:
             return cached_data
 
         try:
-            # Kiểm tra xem bảng có dữ liệu không
-            has_data = self._check_tech_trends_table()
-            if not has_data:
-                logger.warning("Bảng tech_trends không có dữ liệu")
-                return pd.DataFrame(columns=["tech_name", "current_mentions", "previous_mentions", "growth_percent"])
+            # Ghi log cụ thể các tham số đầu vào
+            logger.info(
+                f"Input parameters: end_date={end_date}, min_mentions={min_mentions}, period_weeks={period_weeks}")
 
-            # Sử dụng SQL thuần với mệnh đề WITH
-            # Đảm bảo rằng start_date và end_date đúng định dạng
-            try:
-                # Cố gắng chuyển đổi định dạng ngày nếu cần
-                from datetime import datetime
-                if isinstance(start_date, str) and 'T' in start_date:
-                    start_date = start_date.split('T')[0]
-                if isinstance(end_date, str) and 'T' in end_date:
-                    end_date = end_date.split('T')[0]
-            except:
-                pass
+            # Chuyển đổi end_date sang datetime object nếu là string
+            if isinstance(end_date, str):
+                if 'T' in end_date:
+                    end_date_dt = datetime.fromisoformat(end_date.split('T')[0])
+                else:
+                    end_date_dt = datetime.strptime(end_date, '%Y-%m-%d')
+            else:
+                # Giả sử end_date đã là datetime object
+                end_date_dt = end_date
 
-            # Xây dựng query để lấy dữ liệu hiện tại và kỳ trước
+            # Tính toán khoảng thời gian hiện tại và kỳ trước
+            current_end = end_date_dt
+            period_days = period_weeks * 7
+            current_start = (end_date_dt - timedelta(days=period_days))
+            previous_end = current_start - timedelta(days=1)
+            previous_start = previous_end - timedelta(days=period_days)
+
+            # Ghi log các khoảng thời gian để debug
+            logger.info(f"Current period: {current_start.strftime('%Y-%m-%d')} to {current_end.strftime('%Y-%m-%d')}")
+            logger.info(
+                f"Previous period: {previous_start.strftime('%Y-%m-%d')} to {previous_end.strftime('%Y-%m-%d')}")
+
+            # Sử dụng truy vấn SQL có sẵn
             query = """
-                WITH date_params AS (
-                    SELECT 
-                        %s::date as start_date, 
-                        %s::date as end_date
-                ),
-                current_period AS (
-                    SELECT
-                        t.tech_name,
-                        SUM(t.mention_count) as current_mentions
-                    FROM
-                        reddit_data.tech_trends t,
-                        date_params d
-                    WHERE
-                        t.week_start BETWEEN d.start_date AND d.end_date
-                    GROUP BY
-                        t.tech_name
-                    HAVING
-                        SUM(t.mention_count) >= %s
-                ),
-                dates AS (
-                    SELECT
-                        start_date,
-                        end_date,
-                        (start_date - (end_date - start_date))::date as prev_start_date,
-                        start_date::date - interval '1 day' as prev_end_date
-                    FROM date_params
-                ),
-                previous_period AS (
-                    SELECT
-                        t.tech_name,
-                        SUM(t.mention_count) as previous_mentions
-                    FROM
-                        reddit_data.tech_trends t,
-                        dates d
-                    WHERE
-                        t.week_start BETWEEN d.prev_start_date AND d.prev_end_date
-                    GROUP BY
-                        t.tech_name
-                )
+            WITH current_period AS (
                 SELECT
-                    cp.tech_name,
-                    cp.current_mentions,
-                    COALESCE(pp.previous_mentions, 0) as previous_mentions,
-                    CASE
-                        WHEN COALESCE(pp.previous_mentions, 0) = 0 THEN NULL
-                        ELSE ((cp.current_mentions - pp.previous_mentions)::FLOAT / pp.previous_mentions * 100)
-                    END as growth_percent
+                    tech_name,
+                    SUM(mention_count) as current_mentions
                 FROM
-                    current_period cp
-                    LEFT JOIN previous_period pp ON cp.tech_name = pp.tech_name
-                ORDER BY
-                    growth_percent DESC NULLS LAST
+                    reddit_data.tech_trends
+                WHERE
+                    week_start BETWEEN %s AND %s
+                GROUP BY
+                    tech_name
+                HAVING
+                    SUM(mention_count) >= %s
+            ),
+            previous_period AS (
+                SELECT
+                    tech_name,
+                    SUM(mention_count) as previous_mentions
+                FROM
+                    reddit_data.tech_trends
+                WHERE
+                    week_start BETWEEN %s AND %s
+                GROUP BY
+                    tech_name
+            )
+            SELECT
+                cp.tech_name,
+                cp.current_mentions,
+                COALESCE(pp.previous_mentions, 0) as previous_mentions,
+                CASE
+                    WHEN COALESCE(pp.previous_mentions, 0) = 0 THEN 100
+                    ELSE ((cp.current_mentions - pp.previous_mentions)::FLOAT / pp.previous_mentions * 100)
+                END as growth_percent
+            FROM
+                current_period cp
+                LEFT JOIN previous_period pp ON cp.tech_name = pp.tech_name
+            ORDER BY
+                growth_percent DESC NULLS LAST
             """
 
-            # Log parameters
+            # Chuyển đổi datetime thành string để sử dụng trong query
+            current_start_str = current_start.strftime('%Y-%m-%d')
+            current_end_str = current_end.strftime('%Y-%m-%d')
+            previous_start_str = previous_start.strftime('%Y-%m-%d')
+            previous_end_str = previous_end.strftime('%Y-%m-%d')
+
+            # Ghi log các tham số cho truy vấn
             logger.info(
-                f"Executing query with params: start_date={start_date}, end_date={end_date}, min_mentions={min_mentions}")
+                f"Query parameters: current_start={current_start_str}, current_end={current_end_str}, min_mentions={min_mentions}, previous_start={previous_start_str}, previous_end={previous_end_str}")
 
-            # Thực hiện truy vấn
-            df = pd.read_sql(query, self.db_connection, params=[start_date, end_date, min_mentions])
-            logger.info(f"Query returned {len(df)} rows")
+            # Thực hiện truy vấn với các tham số chính xác
+            df = pd.read_sql(query, self.db_connection, params=(
+                current_start_str, current_end_str, min_mentions, previous_start_str, previous_end_str
+            ))
 
-            # Log sample data
-            if not df.empty:
-                logger.info(f"Sample data: {df.head(3).to_dict('records')}")
-
-            # Xử lý các giá trị NULL trong growth_percent
-            df['growth_percent'] = df['growth_percent'].fillna(100)  # Giả sử tăng trưởng 100% cho các công nghệ mới
+            # Ghi log kết quả truy vấn
+            logger.info(f"Query result: {len(df)} rows returned")
 
             # Lưu vào cache
             self.cache.set(cache_key, df, timeout=300)  # Cache trong 5 phút
@@ -2044,7 +2161,66 @@ class RedditDashboard:
             logger.error(f"Lỗi khi lấy dữ liệu tăng trưởng công nghệ: {str(e)}")
             import traceback
             logger.error(traceback.format_exc())
-            return pd.DataFrame(columns=["tech_name", "current_mentions", "previous_mentions", "growth_percent"])
+
+            # Thử với cách truy vấn khác nếu cách đầu tiên thất bại
+            try:
+                logger.info("Thử lại với cách truy vấn khác")
+
+                # Cách này không sử dụng tham số, mà nhúng giá trị trực tiếp vào query
+                query = f"""
+                WITH current_period AS (
+                    SELECT
+                        tech_name,
+                        SUM(mention_count) as current_mentions
+                    FROM
+                        reddit_data.tech_trends
+                    WHERE
+                        week_start BETWEEN '{current_start_str}' AND '{current_end_str}'
+                    GROUP BY
+                        tech_name
+                    HAVING
+                        SUM(mention_count) >= {min_mentions}
+                ),
+                previous_period AS (
+                    SELECT
+                        tech_name,
+                        SUM(mention_count) as previous_mentions
+                    FROM
+                        reddit_data.tech_trends
+                    WHERE
+                        week_start BETWEEN '{previous_start_str}' AND '{previous_end_str}'
+                    GROUP BY
+                        tech_name
+                )
+                SELECT
+                    cp.tech_name,
+                    cp.current_mentions,
+                    COALESCE(pp.previous_mentions, 0) as previous_mentions,
+                    CASE
+                        WHEN COALESCE(pp.previous_mentions, 0) = 0 THEN 100
+                        ELSE ((cp.current_mentions - pp.previous_mentions)::FLOAT / pp.previous_mentions * 100)
+                    END as growth_percent
+                FROM
+                    current_period cp
+                    LEFT JOIN previous_period pp ON cp.tech_name = pp.tech_name
+                ORDER BY
+                    growth_percent DESC NULLS LAST
+                """
+
+                df = pd.read_sql(query, self.db_connection)
+                logger.info(f"Thử lại thành công: {len(df)} rows returned")
+
+                # Lưu vào cache
+                self.cache.set(cache_key, df, timeout=300)  # Cache trong 5 phút
+
+                return df
+
+            except Exception as e2:
+                logger.error(f"Thử lại không thành công: {str(e2)}")
+                logger.error(traceback.format_exc())
+
+                # Trả về DataFrame trống nếu cả hai cách đều thất bại
+                return pd.DataFrame(columns=["tech_name", "current_mentions", "previous_mentions", "growth_percent"])
 
     def _get_tech_trends_data(self, start_date, end_date, technologies, time_unit="week"):
         """
@@ -2780,6 +2956,177 @@ class RedditDashboard:
                 }
             }
 
+    # def _update_tech_growth_graph(self, start_date, end_date, min_mentions, growth_threshold, period_weeks, item_count):
+    #     """
+    #     Cập nhật biểu đồ tốc độ tăng trưởng công nghệ với cải tiến hiển thị
+    #     """
+    #     try:
+    #         # Log input parameters
+    #         logger.info(
+    #             f"_update_tech_growth_graph params: start_date={start_date}, end_date={end_date}, min_mentions={min_mentions}, growth_threshold={growth_threshold}, period_weeks={period_weeks}, item_count={item_count}")
+    #
+    #         # Lấy dữ liệu tăng trưởng công nghệ
+    #         df = self._get_tech_growth_data(start_date, end_date, min_mentions, period_weeks)
+    #
+    #         # Ghi log số lượng bản ghi nhận được
+    #         logger.info(f"_update_tech_growth_graph - Nhận được {len(df)} bản ghi dữ liệu tăng trưởng")
+    #
+    #         if df.empty:
+    #             message = 'Không có dữ liệu công nghệ nào thỏa mãn điều kiện lọc.'
+    #             return {
+    #                 'data': [],
+    #                 'layout': {
+    #                     'title': message,
+    #                     'xaxis': {'title': 'Công nghệ'},
+    #                     'yaxis': {'title': 'Phần trăm tăng trưởng'},
+    #                     'autosize': True
+    #                 }
+    #             }
+    #
+    #         # Tạo thông tin kỳ so sánh
+    #         try:
+    #             from datetime import datetime, timedelta
+    #             if isinstance(start_date, str) and 'T' in start_date:
+    #                 start_date_dt = datetime.fromisoformat(start_date.split('T')[0])
+    #             else:
+    #                 start_date_dt = datetime.strptime(start_date, '%Y-%m-%d')
+    #
+    #             if isinstance(end_date, str) and 'T' in end_date:
+    #                 end_date_dt = datetime.fromisoformat(end_date.split('T')[0])
+    #             else:
+    #                 end_date_dt = datetime.strptime(end_date, '%Y-%m-%d')
+    #
+    #             period_duration = (end_date_dt - start_date_dt).days
+    #             prev_end_date_dt = start_date_dt - timedelta(days=1)
+    #             prev_start_date_dt = prev_end_date_dt - timedelta(days=period_duration)
+    #
+    #             current_period_str = f"{start_date_dt.strftime('%Y-%m-%d')} đến {end_date_dt.strftime('%Y-%m-%d')}"
+    #             previous_period_str = f"{prev_start_date_dt.strftime('%Y-%m-%d')} đến {prev_end_date_dt.strftime('%Y-%m-%d')}"
+    #             comparison_text = f"So sánh: {current_period_str} vs {previous_period_str}"
+    #         except:
+    #             comparison_text = f"Khoảng thời gian: {start_date} đến {end_date}"
+    #
+    #         # Lọc theo ngưỡng tăng trưởng
+    #         filtered_df = df[df['growth_percent'] >= growth_threshold].copy()
+    #
+    #         if filtered_df.empty:
+    #             # Kiểm tra xem có công nghệ nào tăng trưởng dương không
+    #             positive_growth = df[df['growth_percent'] > 0]
+    #             if not positive_growth.empty:
+    #                 max_growth = positive_growth['growth_percent'].max()
+    #                 return {
+    #                     'data': [],
+    #                     'layout': {
+    #                         'title': f'Không có công nghệ nào có tốc độ tăng trưởng >= {growth_threshold}%. Thử giảm ngưỡng xuống dưới {max_growth:.1f}%',
+    #                         'xaxis': {'title': 'Công nghệ'},
+    #                         'yaxis': {'title': 'Phần trăm tăng trưởng'},
+    #                         'autosize': True
+    #                     }
+    #                 }
+    #             else:
+    #                 return {
+    #                     'data': [],
+    #                     'layout': {
+    #                         'title': f'Không có công nghệ nào có tăng trưởng dương trong khoảng thời gian này.',
+    #                         'xaxis': {'title': 'Công nghệ'},
+    #                         'yaxis': {'title': 'Phần trăm tăng trưởng'},
+    #                         'autosize': True
+    #                     }
+    #                 }
+    #
+    #         # Giới hạn số lượng công nghệ hiển thị
+    #         if len(filtered_df) > item_count:
+    #             filtered_df = filtered_df.head(item_count)
+    #
+    #         # Sắp xếp theo tăng trưởng giảm dần
+    #         filtered_df = filtered_df.sort_values(by='growth_percent', ascending=False)
+    #
+    #         # Thêm tooltip rõ ràng hơn
+    #         filtered_df['hover_text'] = filtered_df.apply(
+    #             lambda row: f"<b>{row['tech_name']}</b><br>" +
+    #                         f"Tăng trưởng: {row['growth_percent']:.1f}%<br>" +
+    #                         f"Hiện tại: {int(row['current_mentions'])} lần đề cập<br>" +
+    #                         f"Kỳ trước: {int(row['previous_mentions'])} lần đề cập",
+    #             axis=1
+    #         )
+    #
+    #         # Tạo biểu đồ
+    #         fig = px.bar(
+    #             filtered_df,
+    #             y='tech_name',
+    #             x='growth_percent',
+    #             title=f'Tốc độ tăng trưởng công nghệ (>= {growth_threshold}%)',
+    #             labels={
+    #                 'growth_percent': 'Phần trăm tăng trưởng (%)',
+    #                 'tech_name': 'Công nghệ'
+    #             },
+    #             text='growth_percent',
+    #             custom_data=['hover_text'],
+    #             orientation='h',
+    #             color='growth_percent',
+    #             color_continuous_scale='Viridis'
+    #         )
+    #
+    #         # Thêm giá trị trên thanh
+    #         fig.update_traces(
+    #             texttemplate='%{x:.1f}%',
+    #             textposition='outside',
+    #             hovertemplate='%{customdata[0]}<extra></extra>'
+    #         )
+    #
+    #         # Cập nhật layout để cải thiện hiển thị
+    #         fig.update_layout(
+    #             autosize=True,
+    #             margin=dict(l=10, r=50, t=40, b=40),
+    #             coloraxis_showscale=False,
+    #             xaxis=dict(
+    #                 title=dict(
+    #                     text='Phần trăm tăng trưởng (%)',
+    #                     font=dict(size=14)
+    #                 )
+    #             ),
+    #             yaxis=dict(
+    #                 title=dict(
+    #                     text='Công nghệ',
+    #                     font=dict(size=14)
+    #                 ),
+    #                 autorange="reversed"
+    #             ),
+    #             title=dict(
+    #                 text=f'Tốc độ tăng trưởng công nghệ (>= {growth_threshold}%)',
+    #                 x=0.5,
+    #                 xanchor='center'
+    #             ),
+    #             annotations=[
+    #                 dict(
+    #                     text=comparison_text,
+    #                     x=0.5,
+    #                     y=1.05,
+    #                     xref="paper",
+    #                     yref="paper",
+    #                     showarrow=False,
+    #                     font=dict(size=12, color="#666666")
+    #                 )
+    #             ]
+    #         )
+    #
+    #         return fig
+    #
+    #     except Exception as e:
+    #         logger.error(f"Lỗi khi cập nhật biểu đồ tốc độ tăng trưởng: {str(e)}")
+    #         # Ghi log chi tiết lỗi
+    #         import traceback
+    #         logger.error(traceback.format_exc())
+    #         return {
+    #             'data': [],
+    #             'layout': {
+    #                 'title': f'Lỗi khi tạo biểu đồ: {str(e)}',
+    #                 'xaxis': {'title': 'Phần trăm tăng trưởng'},
+    #                 'yaxis': {'title': 'Công nghệ'},
+    #                 'autosize': True
+    #             }
+    #         }
+
     def _update_tech_growth_graph(self, start_date, end_date, min_mentions, growth_threshold, period_weeks, item_count):
         """
         Cập nhật biểu đồ tốc độ tăng trưởng công nghệ với cải tiến hiển thị
@@ -2787,9 +3134,12 @@ class RedditDashboard:
         try:
             # Log input parameters
             logger.info(
-                f"_update_tech_growth_graph params: start_date={start_date}, end_date={end_date}, min_mentions={min_mentions}, growth_threshold={growth_threshold}, period_weeks={period_weeks}, item_count={item_count}")
+                f"_update_tech_growth_graph params: start_date={start_date}, end_date={end_date}, "
+                f"min_mentions={min_mentions}, growth_threshold={growth_threshold}, "
+                f"period_weeks={period_weeks}, item_count={item_count}")
 
-            # Lấy dữ liệu tăng trưởng công nghệ
+            # Lấy dữ liệu tăng trưởng công nghệ (sử dụng cả start_date và end_date)
+            # Nhưng bên trong hàm sẽ tính toán dựa vào end_date và period_weeks
             df = self._get_tech_growth_data(start_date, end_date, min_mentions, period_weeks)
 
             # Ghi log số lượng bản ghi nhận được
@@ -2809,26 +3159,24 @@ class RedditDashboard:
 
             # Tạo thông tin kỳ so sánh
             try:
-                from datetime import datetime, timedelta
-                if isinstance(start_date, str) and 'T' in start_date:
-                    start_date_dt = datetime.fromisoformat(start_date.split('T')[0])
-                else:
-                    start_date_dt = datetime.strptime(start_date, '%Y-%m-%d')
-
+                # Chuyển đổi end_date sang datetime
                 if isinstance(end_date, str) and 'T' in end_date:
                     end_date_dt = datetime.fromisoformat(end_date.split('T')[0])
                 else:
                     end_date_dt = datetime.strptime(end_date, '%Y-%m-%d')
 
-                period_duration = (end_date_dt - start_date_dt).days
-                prev_end_date_dt = start_date_dt - timedelta(days=1)
-                prev_start_date_dt = prev_end_date_dt - timedelta(days=period_duration)
+                # Tính toán khoảng thời gian hiện tại và kỳ trước
+                period_days = period_weeks * 7
+                current_start = (end_date_dt - timedelta(days=period_days))
+                previous_end = current_start - timedelta(days=1)
+                previous_start = previous_end - timedelta(days=period_days)
 
-                current_period_str = f"{start_date_dt.strftime('%Y-%m-%d')} đến {end_date_dt.strftime('%Y-%m-%d')}"
-                previous_period_str = f"{prev_start_date_dt.strftime('%Y-%m-%d')} đến {prev_end_date_dt.strftime('%Y-%m-%d')}"
+                current_period_str = f"{current_start.strftime('%Y-%m-%d')} đến {end_date_dt.strftime('%Y-%m-%d')}"
+                previous_period_str = f"{previous_start.strftime('%Y-%m-%d')} đến {previous_end.strftime('%Y-%m-%d')}"
                 comparison_text = f"So sánh: {current_period_str} vs {previous_period_str}"
-            except:
-                comparison_text = f"Khoảng thời gian: {start_date} đến {end_date}"
+            except Exception as e:
+                logger.error(f"Lỗi khi tính toán khoảng thời gian: {str(e)}")
+                comparison_text = f"So sánh: {period_weeks} tuần gần nhất với {period_weeks} tuần trước đó"
 
             # Lọc theo ngưỡng tăng trưởng
             filtered_df = df[df['growth_percent'] >= growth_threshold].copy()

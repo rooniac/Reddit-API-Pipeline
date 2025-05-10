@@ -474,8 +474,6 @@ class KeywordAnalyzer:
             return []
 
         try:
-            # Dùng phương pháp đơn giản hơn để tìm topics
-            # Thay vì sử dụng TF-IDF, ta sẽ dùng Counter cho các từ xuất hiện nhiều nhất
             top_topics = []
 
             for post in posts_data:
