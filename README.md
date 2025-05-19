@@ -83,6 +83,7 @@ reddit_pipeline/
 │    
 │
 └── scripts/                   # Các script chạy các tác vụ
+    ├── create_database_schema.sql     
     ├── setup_database.py      # Script thiết lập database
     ├── collect_reddit_data.py # Script thu thập dữ liệu Reddit
     ├── process_reddit_data.py # Script xử lý dữ liệu
