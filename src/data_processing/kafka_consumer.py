@@ -10,7 +10,6 @@ from src.utils.config import (
 )
 from src.utils.logger import setup_logger
 
-# Thiết lập logger
 logger = setup_logger(__name__, "logs/kafka_consumer.log")
 
 class RedditDataConsumer:
@@ -260,7 +259,6 @@ class RedditDataConsumer:
             return
 
         try:
-            # Kiểm tra sự tồn tại của user
             self.cur.execute(
                 "SELECT user_id, post_count, comment_count FROM reddit_data.user_activity WHERE username = %s",
                 (username, )
@@ -269,7 +267,6 @@ class RedditDataConsumer:
 
             current_time = time.strftime('%Y-%m-%d %H:%M:%S')
 
-            # Nếu chưa tồn tại thì thêm mới
             if not result:
                 self.cur.execute("""
                     INSERT INTO reddit_data.user_activity (
@@ -283,7 +280,6 @@ class RedditDataConsumer:
                     current_time
                 ))
             else:
-                # Nếu đã tồn tại thì cập nhật
                 user_id, post_count, comment_count = result
                 self.cur.execute("""
                     UPDATE reddit_data.user_activity

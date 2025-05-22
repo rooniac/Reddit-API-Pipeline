@@ -5,8 +5,6 @@ import praw
 from praw import models
 import os
 from kafka import KafkaProducer
-# from nltk import config_megam
-# from scipy.constants import precision
 
 from src.utils.config import (
     REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, REDDIT_USER_AGENT,
@@ -15,7 +13,6 @@ from src.utils.config import (
 )
 from src.utils.logger import setup_logger
 
-# Thiet lap logger
 logger = setup_logger(__name__, "logs/reddit_collector.log")
 
 class RedditCollector:
@@ -37,7 +34,6 @@ class RedditCollector:
             self.subreddits = subreddits
 
         self.post_limit = post_limit
-        # Thêm vào ngày 4/5
         self.total_posts_collected = 0
         self.total_comments_collected = 0
 
@@ -69,86 +65,6 @@ class RedditCollector:
             logger.error(f"Lỗi khi kết nối với Kafka: {str(e)}")
             raise
 
-    # def collect_posts(self, subreddit_name, sort_by="hot"):
-    #     """
-    #         Thu thập bài viết từ một subreddit cụ thể
-    #
-    #         Args:
-    #             subreddit_name (str): Tên của subreddit
-    #             sort_by (str): Phương thức sắp xếp ('hot', 'new', 'top', 'rising')
-    #
-    #         Returns:
-    #             int: Số lượng bài viết đã thu thập
-    #     """
-    #     logger.info(f"Bắt đầu thu thập bài viết từ r/{subreddit_name} ({sort_by}")
-    #
-    #     # Lấy subreddit
-    #     subreddit = self.reddit.subreddit(subreddit_name)
-    #
-    #     # Lựa chọn phương thức sắp xếp
-    #     if sort_by == "hot":
-    #         posts = subreddit.hot(limit=self.post_limit)
-    #     elif sort_by == "new":
-    #         posts = subreddit.new(limit=self.post_limit)
-    #     elif sort_by == "top":
-    #         posts = subreddit.top(limit=self.post_limit)
-    #     elif sort_by == "rising":
-    #         posts = subreddit.rising(limit=self.post_limit)
-    #     else:
-    #         logger.warning(f"Phương thức sắp xếp không hợp lệ: {sort_by}, tiến hành sử dụng hot thay thế")
-    #         posts = subreddit.hot(limit=self.post_limit)
-    #
-    #     count = 0
-    #
-    #     for post in posts:
-    #         # Ignore pinned posts
-    #         if post.stickied:
-    #             continue
-    #
-    #         # Tạo đối tượng JSON để lưu thông tin bài viết
-    #         try:
-    #             post_data = {
-    #                 "id": post.id,
-    #                 "title": post.title,
-    #                 "text": post.selftext,
-    #                 "url": post.url,
-    #                 "author": post.author.name if post.author else "[delete]",
-    #                 "score": post.score,
-    #                 "upvote_ratio": post.upvote_ratio,
-    #                 "num_comments": post.num_comments,
-    #                 "created_utc": post.created_utc,
-    #                 "created_date": datetime.fromtimestamp(post.created_utc).strftime('%Y-%m-%d %H:%M:%S'),
-    #                 "subreddit": post.subreddit.display_name,
-    #                 "permalink": post.permalink,
-    #                 "is_self": post.is_self,
-    #                 "is_video": post.is_video if hasattr(post, 'is_video') else False,
-    #                 "over_18": post.over_18,
-    #                 "spoiler": post.spoiler if hasattr(post, 'spoiler') else False,
-    #                 "link_flair_text": post.link_flair_text,
-    #                 "sort_type": sort_by,
-    #                 "collected_utc": int(time.time())
-    #             }
-    #
-    #             # Gửi dữ liệu tới Kafka
-    #             self.producer.send(KAFKA_POSTS_TOPIC, key=post.id, value=post_data)
-    #
-    #             # Lưu trữ dữ liệu vào file JSON (phân tích)
-    #             self._save_to_json(post_data, f"data/raw/posts/{subreddit_name}_{post.id}.json")
-    #
-    #             count += 1
-    #             logger.debug(f"Đã thu thập bài viết: {post.title[:50]}...")
-    #
-    #             # Thu thập bình luận cho bài viết hiện tại
-    #             self.collect_comments(post)
-    #
-    #             # Dừng một chút -> tránh giới hạn tốc độ (rate limit of api call reddit)
-    #             time.sleep(0.5)
-    #
-    #         except Exception as e:
-    #             logger.error(f"Lỗi khi xử lý bài viết {post.id}: {str(e)}")
-    #
-    #     logger.info(f"Đã thu thập {count} bài viết từ r/{subreddit_name}")
-    #     return count
 
     def collect_posts_with_pagination(self, subreddit_name, sort_by='hot', max_posts=None):
         """
@@ -242,7 +158,7 @@ class RedditCollector:
                         # Thu thập bình luận cho bài viết hiện tại
                         comments_count = self.collect_comments(post)
 
-                        # Tạm dừng giữa các bài viết để tránh rate limiting
+                        # Rate limiting
                         time.sleep(1)
 
                     except Exception as e:
@@ -253,7 +169,7 @@ class RedditCollector:
                     last_id = f"t3_{posts_batch[-1].id}"
                     logger.debug(f"Sử dụng last_id: {last_id} cho trang tiếp theo")
 
-                    # Tạm dừng giữa các trang để tránh rate limiting
+                    # Rate limiting
                     time.sleep(2)
 
             except Exception as e:
@@ -264,71 +180,6 @@ class RedditCollector:
 
         logger.info(f"Đã hoàn thành thu thập {count} bài viết từ r/{subreddit_name} ({sort_by})")
         return count
-
-    # def collect_comments(self, post):
-    #     """
-    #         Thu thập bình luận từ một bài viết
-    #
-    #         Args:
-    #             post (praw.models.Submission): Đối tượng bài viết
-    #
-    #         Returns:
-    #             int: Số lượng bình luận đã thu thập
-    #     """
-    #     logger.info(f"Thu thập bình luận cho bài viết ID: {post.id}")
-    #
-    #     # Đảm bảo tất cả bình luận được tải (thay thế MoreComments object)
-    #     try:
-    #         post.comments.replace_more(limit=None)
-    #         count = 0
-    #
-    #         # Đệ quy duyệt qua từng bình luận và bình luận con của bình luận
-    #         def process_comment(comment_obj, parent_id=None):
-    #             nonlocal count
-    #
-    #             try:
-    #                 comment_data = {
-    #                     "id": comment_obj.id,
-    #                     "post_id": post.id,
-    #                     "parent_id": parent_id if parent_id else comment_obj.parent_id,
-    #                     "body": comment_obj.body,
-    #                     "author": comment_obj.author.name if comment_obj.author else "[delete]",
-    #                     "score": comment_obj.score,
-    #                     "created_utc": comment_obj.created_utc,
-    #                     "created_date": datetime.fromtimestamp(comment_obj.created_utc).strftime('%Y-%m-%d %H:%M:%S'),
-    #                     "is_submitter": comment_obj.is_submitter,
-    #                     "subreddit": post.subreddit.display_name,
-    #                     "collected_utc": int(time.time())
-    #                 }
-    #
-    #                 # Gửi data tới Kafka
-    #                 self.producer.send(KAFKA_COMMENTS_TOPIC, key=comment_obj.id, value=comment_data)
-    #
-    #                 # Lưu dữ liệu vào file JSON
-    #                 self._save_to_json(comment_data, f"data/raw/comments/{post.subreddit.display_name}_{comment_obj.id}.json")
-    #
-    #                 count += 1
-    #
-    #                 # Xử lý các bình luận con
-    #                 for reply in comment_obj.replies:
-    #                     process_comment(reply, comment_obj.id)
-    #
-    #             except Exception as e:
-    #                 logger.error(f"Lỗi khi xử lý bình luận {comment_obj.id}: {str(e)}")
-    #                 ### Thêm tạm thời debug logging để xác định chính xác nguồn lỗi
-    #                 logger.debug(f"Chi tiết bình luận: id={comment_obj.id}, author={comment_obj.author if comment_obj.author else '[deleted]'}")
-    #
-    #         # Xử lý tất cả bình luận gốc trong bài viết
-    #         for comment in post.comments:
-    #             if isinstance(comment, praw.models.MoreComments):
-    #                 continue
-    #             process_comment(comment)
-    #
-    #         logger.info(f"Đã thu thập {count} bình luận cho bài viết ID: {post.id}")
-    #         return count
-    #     except Exception as e:
-    #         logger.error(f"Lỗi khi thu thập bình luận cho bài viết {post.id}: {str(e)}")
-    #         return 0
 
     def collect_comments(self, post):
         """
@@ -402,27 +253,6 @@ class RedditCollector:
             logger.error(f"Lỗi khi thu thập bình luận cho bài viết {post.id}: {str(e)}")
             return 0
 
-    # def collect_all_data(self):
-    #     """
-    #         Thu thập dữ liệu từ tất cả subreddits được cấu hình
-    #     """
-    #
-    #     for subreddit in self.subreddits:
-    #         logger.info(f"Bắt đầu thu thập dữ liệu từ r/{subreddit}")
-    #
-    #         try:
-    #             # Thu thập các bài viết theo các cách sắp xếp khác nhau
-    #             for sort_type in ["hot", "new", "top"]:
-    #                 self.collect_posts(subreddit, sort_by=sort_type)
-    #                 time.sleep(1)
-    #
-    #             logger.info(f"Đã hoàn thành thu thập dữ liệu từ r/{subreddit}")
-    #
-    #         except Exception as e:
-    #             logger.error(f"Lỗi khi thu thập dữ liệu từ r/{subreddit}: {str(e)}")
-    #
-    #     logger.info("Đã hoàn thành thu thập dữ liệu từ tất cả subreddits")
-
     def collect_all_data(self, max_posts_per_type=None):
         """
             Thu thập dữ liệu từ tất cả subreddits được cấu hình
@@ -448,7 +278,7 @@ class RedditCollector:
                                                                      max_posts=max_posts_per_type)
                     logger.info(f"Đã thu thập {posts_count} bài viết từ r/{subreddit} ({sort_type})")
 
-                    # Tạm dừng giữa các loại sắp xếp để tránh rate limiting
+                    # Rate limiting
                     time.sleep(3)
 
                 logger.info(f"Đã hoàn thành thu thập dữ liệu từ r/{subreddit}")
@@ -456,7 +286,7 @@ class RedditCollector:
             except Exception as e:
                 logger.error(f"Lỗi khi thu thập dữ liệu từ r/{subreddit}: {str(e)}")
 
-            # Tạm dừng giữa các subreddit để tránh rate limiting
+            # Rate limiting
             time.sleep(5)
 
         end_time = time.time()

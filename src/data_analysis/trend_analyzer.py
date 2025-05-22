@@ -102,7 +102,6 @@ class TrendAnalyzer:
         conn = None
         cur = None
         try:
-            # Lấy kết nối từ pool
             conn = self.get_db_connection()
             cur = conn.cursor()
 
@@ -125,7 +124,6 @@ class TrendAnalyzer:
                 );
             """)
 
-            # Xóa dữ liệu cũ từ bảng tech_trends
             cur.execute("TRUNCATE TABLE reddit_data.tech_trends RESTART IDENTITY")
 
             # Chèn dữ liệu mới từ temporary table
@@ -145,7 +143,6 @@ class TrendAnalyzer:
                             week_start, tech_name, mention_count DESC
                     """)
 
-            # Lấy số lượng xu hướng đã tạo
             cur.execute("SELECT COUNT(*) FROM reddit_data.tech_trends")
             trend_count = cur.fetchone()[0]
 
@@ -290,16 +287,16 @@ class TrendAnalyzer:
 
                 # Truy vấn điểm tình cảm trung bình
                 query = f"""
-                                SELECT
-                                    tech_name,
-                                    AVG(sentiment_avg) as avg_sentiment
-                                FROM
-                                    reddit_data.tech_trends
-                                WHERE
-                                    tech_name IN ('{tech_list}')
-                                GROUP BY
-                                    tech_name
-                            """
+                    SELECT
+                        tech_name,
+                        AVG(sentiment_avg) as avg_sentiment
+                    FROM
+                        reddit_data.tech_trends
+                    WHERE
+                        tech_name IN ('{tech_list}')
+                    GROUP BY
+                        tech_name
+                """
 
                 sentiment_df = pd.read_sql_query(query, conn)
                 emerging_df = pd.merge(emerging_df, sentiment_df, on='tech_name', how='left')
@@ -337,11 +334,10 @@ class TrendAnalyzer:
             return
 
         try:
-            # Chuẩn bị dữ liệu để insert
             current_date = datetime.now().date()
             records = []
 
-            for _, row in emerging_df.iterrows():  # Sửa từ iter_rows thành iterrows
+            for _, row in emerging_df.iterrows():
                 records.append((
                     row['tech_name'],
                     current_date,
@@ -397,17 +393,16 @@ class TrendAnalyzer:
                     logger.info(f"Sử dụng kết quả phân tích tương quan từ cache")
                     return self.cache[cache_key]['data']
 
-            # Lấy kết nối từ pool
             conn = self.get_db_connection()
 
             # Danh sách cách công nghệ thường được đề cập
             query_popular = f"""
-                            SELECT tech_name, SUM(mention_count) as total_mentions
-                            FROM reddit_data.tech_trends
-                            GROUP BY tech_name
-                            HAVING SUM(mention_count) >= {min_mentions}
-                            ORDER BY total_mentions DESC
-                        """
+                SELECT tech_name, SUM(mention_count) as total_mentions
+                FROM reddit_data.tech_trends
+                GROUP BY tech_name
+                HAVING SUM(mention_count) >= {min_mentions}
+                ORDER BY total_mentions DESC
+            """
 
             popular_techs = pd.read_sql_query(query_popular, conn)
 

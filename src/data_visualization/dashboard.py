@@ -121,7 +121,7 @@ class RedditDashboard:
 
             # Container chính cho nội dung
             dbc.Container([
-                # Filter chung - cải tiến thành một card riêng với shadow
+                # Filter chung
                 dbc.Card([
                     dbc.CardHeader([
                         html.H4("Bộ lọc", className="text-primary"),
@@ -184,11 +184,11 @@ class RedditDashboard:
                     ])
                 ], className="mb-4 shadow-sm"),
 
-                # Tabs chính - cải tiến với hiệu ứng shadow và padding
+                # Tabs chính
                 dbc.Tabs([
                     # Tab Tổng quan
                     dbc.Tab([
-                        # Row 1: KPI Cards với shadow và màu sắc
+                        # Row 1: KPI Cards
                         dbc.Row([
                             # Tổng số bài viết
                             dbc.Col([
@@ -230,7 +230,7 @@ class RedditDashboard:
                                 ], className="shadow-sm h-100 border-warning border-top")
                             ], md=3),
                         ], className="mb-4"),
-                        # Row 2: Hoạt động theo thời gian và Top subreddits với cải tiến giao diện
+                        # Row 2: Hoạt động theo thời gian và Top subreddits
                         dbc.Row([
                             # Hoạt động theo thời gian
                             dbc.Col([
@@ -336,7 +336,7 @@ class RedditDashboard:
                             ], md=6),
                         ])
                     ], label="Tổng quan", tab_id="tab-overview", className="p-3"),
-                    # Tab 1: Top chủ đề thảo luận và câu hỏi phổ biến - cải tiến giao diện
+                    # Tab 1: Top chủ đề thảo luận và câu hỏi phổ biến
                     dbc.Tab([
                         dbc.Row([
                             # WordCloud cho top chủ đề
@@ -425,7 +425,7 @@ class RedditDashboard:
                             ])
                         ])
                     ], label="Top chủ đề thảo luận", className="p-3"),
-                    # Tab 2: Tốc độ tăng trưởng công nghệ - cải tiến giao diện
+                    # Tab 2: Tốc độ tăng trưởng công nghệ
                     dbc.Tab([
                         dbc.Row([
                             dbc.Col([
@@ -507,7 +507,7 @@ class RedditDashboard:
                             ], md=12),
                         ])
                     ], label="Tốc độ tăng trưởng công nghệ", className="p-3"),
-                    # Tab 3: Xu hướng công nghệ theo thời gian - cải tiến giao diện
+                    # Tab 3: Xu hướng công nghệ theo thời gian
                     dbc.Tab([
                         dbc.Row([
                             dbc.Col([
@@ -592,7 +592,7 @@ class RedditDashboard:
                             ], md=12),
                         ])
                     ], label="Xu hướng công nghệ", className="p-3"),
-                    # Tab 4: Mạng lưới tương quan giữa các công nghệ - cải tiến giao diện
+                    # Tab 4: Mạng lưới tương quan giữa các công nghệ
                     dbc.Tab([
                         dbc.Row([
                             dbc.Col([
@@ -662,7 +662,7 @@ class RedditDashboard:
                             ], md=12),
                         ], className="mt-4")
                     ], label="Mạng lưới tương quan", className="p-3"),
-                    # Tab 5: Bảng xếp hạng kỹ năng - cải tiến giao diện
+                    # Tab 5: Bảng xếp hạng kỹ năng
                     dbc.Tab([
                         dbc.Row([
                             dbc.Col([
@@ -750,7 +750,6 @@ class RedditDashboard:
                             ], md=12),
                         ])
                     ], label="Bảng xếp hạng kỹ năng", className="p-3"),
-
                     # Tab 6: Phân tích tình cảm về công nghệ
                     dbc.Tab([
                         dbc.Row([
@@ -851,7 +850,7 @@ class RedditDashboard:
                                                 ], style={'height': '350px', 'width': '100%'})
                                             ]
                                         )
-                                    ], className="p-3")  # Thêm padding cho card body
+                                    ], className="p-3")
                                 ], className="h-100 shadow-sm")  # Đảm bảo chiều cao 100%
                             ], md=6),
                             dbc.Col([
@@ -876,9 +875,9 @@ class RedditDashboard:
                                             ]
                                         )
                                     ], className="p-0")
-                                ], className="h-100 shadow-sm")  # Đảm bảo chiều cao 100%
+                                ], className="h-100 shadow-sm")
                             ], md=6),
-                        ], className="mb-3", style={"min-height": "400px"})  # Đặt chiều cao tối thiểu cho hàng
+                        ], className="mb-3", style={"min-height": "400px"})
                     ], label="Phân tích tình cảm", className="p-3"),
                 ], id="main-tabs", active_tab="tab-overview", className="dbc"),
 

@@ -23,8 +23,7 @@ def main():
     try:
         analyzer = KeywordAnalyzer()
 
-        # Phân tích các bài viết chưa được phân tích với đa luồng
-        # Sử dụng cài đặt nâng cao với 8 luồng và batch_size 100
+        # Sử dụng với 8 luồng và batch_size 100
         post_count = analyzer.analyze_all_posts_parallel(max_workers=8, batch_size=100)
         logger.info(f"Đã phân tích {post_count} bài viết")
 

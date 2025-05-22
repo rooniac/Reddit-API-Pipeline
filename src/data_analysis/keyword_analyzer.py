@@ -452,7 +452,6 @@ class KeywordAnalyzer:
         Returns:
             list: Danh sách các n-gram
         """
-        # Sử dụng generator để tiết kiệm bộ nhớ
         if len(tokens) < n:
             return []
 
@@ -847,9 +846,77 @@ class KeywordAnalyzer:
         # Sử dụng phiên bản song song với cấu hình mặc định
         return self.analyze_all_posts_parallel(limit=limit)
 
+    # def update_tech_trends(self):
+    #     """
+    #     Cập nhật bảng tech_trends dựa trên phân tích bài viết.
+    #
+    #     Returns:
+    #         int: Số lượng xu hướng đã cập nhật
+    #     """
+    #     conn = None
+    #     cur = None
+    #     try:
+    #         # Lấy kết nối từ pool
+    #         conn = self.get_db_connection()
+    #         cur = conn.cursor()
+    #
+    #         # Xóa dữ liệu cũ
+    #         cur.execute("TRUNCATE TABLE reddit_data.tech_trends RESTART IDENTITY")
+    #
+    #         # Chèn dữ liệu mới từ phân tích post
+    #         cur.execute("""
+    #             WITH tech_mentions AS (
+    #                 SELECT
+    #                     unnest(pa.tech_mentioned) as tech_name,
+    #                     DATE_TRUNC('week', p.created_date) as week_start,
+    #                     p.subreddit_id
+    #                 FROM
+    #                     reddit_data.post_analysis pa
+    #                     JOIN reddit_data.posts p ON pa.post_id = p.post_id
+    #                 WHERE
+    #                     pa.tech_mentioned IS NOT NULL
+    #             )
+    #             INSERT INTO reddit_data.tech_trends (
+    #                 tech_name, mention_count, week_start, subreddit_id
+    #             )
+    #             SELECT
+    #                 tech_name,
+    #                 COUNT(*) as mention_count,
+    #                 week_start,
+    #                 subreddit_id
+    #             FROM
+    #                 tech_mentions
+    #             GROUP BY
+    #                 tech_name, week_start, subreddit_id
+    #             ORDER BY
+    #                 week_start, mention_count DESC
+    #         """)
+    #
+    #         # Lấy số lượng trends đã tạo
+    #         cur.execute("SELECT COUNT(*) FROM reddit_data.tech_trends")
+    #         trend_count = cur.fetchone()[0]
+    #
+    #         conn.commit()
+    #         logger.info(f"Đã cập nhật {trend_count} xu hướng công nghệ")
+    #
+    #         return trend_count
+    #
+    #     except Exception as e:
+    #         logger.error(f"Lỗi khi cập nhật xu hướng công nghệ: {str(e)}")
+    #         if conn:
+    #             conn.rollback()
+    #         return 0
+    #
+    #     finally:
+    #         if cur:
+    #             cur.close()
+    #         if conn:
+    #             self.return_db_connection(conn)
+
     def update_tech_trends(self):
         """
-        Cập nhật bảng tech_trends dựa trên phân tích bài viết.
+        Cập nhật bảng tech_trends dựa trên phân tích bài viết,
+        sử dụng phương pháp cập nhật gia tăng với xử lý tối ưu cho bảng trống.
 
         Returns:
             int: Số lượng xu hướng đã cập nhật
@@ -857,50 +924,122 @@ class KeywordAnalyzer:
         conn = None
         cur = None
         try:
-            # Lấy kết nối từ pool
             conn = self.get_db_connection()
             cur = conn.cursor()
 
-            # Xóa dữ liệu cũ
-            cur.execute("TRUNCATE TABLE reddit_data.tech_trends RESTART IDENTITY")
+            cur.execute("SELECT COUNT(*) FROM reddit_data.tech_trends")
+            table_empty = cur.fetchone()[0] == 0
 
-            # Chèn dữ liệu mới từ phân tích post
-            cur.execute("""
-                WITH tech_mentions AS (
+            if table_empty:
+                cur.execute("""
+                    WITH tech_mentions AS (
+                        SELECT 
+                            unnest(pa.tech_mentioned) as tech_name,
+                            DATE_TRUNC('week', p.created_date) as week_start,
+                            p.subreddit_id
+                        FROM 
+                            reddit_data.post_analysis pa
+                            JOIN reddit_data.posts p ON pa.post_id = p.post_id
+                        WHERE 
+                            pa.tech_mentioned IS NOT NULL
+                    )
+                    INSERT INTO reddit_data.tech_trends (
+                        tech_name, mention_count, week_start, subreddit_id
+                    )
                     SELECT 
-                        unnest(pa.tech_mentioned) as tech_name,
-                        DATE_TRUNC('week', p.created_date) as week_start,
-                        p.subreddit_id
+                        tech_name,
+                        COUNT(*) as mention_count,
+                        week_start,
+                        subreddit_id
+                    FROM 
+                        tech_mentions
+                    GROUP BY 
+                        tech_name, week_start, subreddit_id
+                    ORDER BY 
+                        week_start, mention_count DESC
+                """)
+
+                cur.execute("SELECT COUNT(*) FROM reddit_data.tech_trends")
+                trend_count = cur.fetchone()[0]
+
+                conn.commit()
+                logger.info(f"Đã chèn {trend_count} xu hướng công nghệ vào bảng trống")
+
+                return trend_count
+
+            else:
+                # Cập nhật gia tăng
+                # Xác định khoảng thời gian có dữ liệu mới
+                cur.execute("""
+                    WITH last_update AS (
+                        SELECT MAX(processed_date) as last_date
+                        FROM reddit_data.tech_trends
+                    )
+                    SELECT 
+                        MIN(DATE_TRUNC('week', p.created_date)) as min_week,
+                        MAX(DATE_TRUNC('week', p.created_date)) as max_week
                     FROM 
                         reddit_data.post_analysis pa
                         JOIN reddit_data.posts p ON pa.post_id = p.post_id
                     WHERE 
-                        pa.tech_mentioned IS NOT NULL
-                )
-                INSERT INTO reddit_data.tech_trends (
-                    tech_name, mention_count, week_start, subreddit_id
-                )
-                SELECT 
-                    tech_name,
-                    COUNT(*) as mention_count,
-                    week_start,
-                    subreddit_id
-                FROM 
-                    tech_mentions
-                GROUP BY 
-                    tech_name, week_start, subreddit_id
-                ORDER BY 
-                    week_start, mention_count DESC
-            """)
+                        pa.processed_date > COALESCE((SELECT last_date FROM last_update), '2013-01-01')
+                        AND pa.tech_mentioned IS NOT NULL
+                """)
 
-            # Lấy số lượng trends đã tạo
-            cur.execute("SELECT COUNT(*) FROM reddit_data.tech_trends")
-            trend_count = cur.fetchone()[0]
+                date_range = cur.fetchone()
+                min_week, max_week = date_range[0], date_range[1]
 
-            conn.commit()
-            logger.info(f"Đã cập nhật {trend_count} xu hướng công nghệ")
+                if min_week is None or max_week is None:
+                    logger.info("Không có dữ liệu mới để cập nhật xu hướng công nghệ")
+                    return 0
 
-            return trend_count
+                # Xóa dữ liệu cũ trong khoảng thời gian cần cập nhật
+                cur.execute("""
+                    DELETE FROM reddit_data.tech_trends
+                    WHERE week_start BETWEEN %s AND %s
+                """, (min_week, max_week))
+
+                # Chèn dữ liệu mới cho khoảng thời gian đã xóa
+                cur.execute("""
+                    WITH tech_mentions AS (
+                        SELECT 
+                            unnest(pa.tech_mentioned) as tech_name,
+                            DATE_TRUNC('week', p.created_date) as week_start,
+                            p.subreddit_id
+                        FROM 
+                            reddit_data.post_analysis pa
+                            JOIN reddit_data.posts p ON pa.post_id = p.post_id
+                        WHERE 
+                            pa.tech_mentioned IS NOT NULL
+                            AND DATE_TRUNC('week', p.created_date) BETWEEN %s AND %s
+                    )
+                    INSERT INTO reddit_data.tech_trends (
+                        tech_name, mention_count, week_start, subreddit_id
+                    )
+                    SELECT 
+                        tech_name,
+                        COUNT(*) as mention_count,
+                        week_start,
+                        subreddit_id
+                    FROM 
+                        tech_mentions
+                    GROUP BY 
+                        tech_name, week_start, subreddit_id
+                    ORDER BY 
+                        week_start, mention_count DESC
+                """, (min_week, max_week))
+
+                cur.execute("""
+                    SELECT COUNT(*) FROM reddit_data.tech_trends
+                    WHERE week_start BETWEEN %s AND %s
+                """, (min_week, max_week))
+
+                trend_count = cur.fetchone()[0]
+
+                conn.commit()
+                logger.info(f"Đã cập nhật {trend_count} xu hướng công nghệ từ {min_week} đến {max_week}")
+
+                return trend_count
 
         except Exception as e:
             logger.error(f"Lỗi khi cập nhật xu hướng công nghệ: {str(e)}")

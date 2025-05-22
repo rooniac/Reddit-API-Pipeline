@@ -28,7 +28,6 @@ def setup_logger(name, log_file=None):
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
-    # If log file exist, create file handler
     if log_file:
         # Make sure logs folder exist
         os.makedirs(os.path.dirname(log_file), exist_ok=True)
