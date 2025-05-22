@@ -624,11 +624,11 @@ class RedditDashboard:
                                         html.Label("Ngưỡng tương quan:", className="font-weight-bold"),
                                         dcc.Slider(
                                             id="correlation-threshold-slider",
-                                            min=0.1,
-                                            max=0.9,
-                                            step=0.1,
-                                            value=0.1,
-                                            marks={i / 10: str(i / 10) for i in range(1, 10)},
+                                            min=0.05,
+                                            max=0.305,
+                                            step=0.05,
+                                            value=0.05, # Default value to get correlation data
+                                            marks={i * 0.05: f"{i * 0.05:.2f}" for i in range(1, 8)},
                                             className="mt-2"
                                         ),
                                         html.P("Di chuyển chuột để zoom và phóng to, nhấp vào nút để xem chi tiết",
@@ -2354,7 +2354,7 @@ class RedditDashboard:
             logger.error(f"Lỗi khi lấy dữ liệu xu hướng theo subreddit: {str(e)}")
             return pd.DataFrame(columns=["subreddit_name", "tech_name", "mentions", "avg_sentiment"])
 
-    def _get_tech_correlation_data(self, start_date, end_date, threshold=0.1):
+    def _get_tech_correlation_data(self, start_date, end_date, threshold=0.05):
         """
         Lấy dữ liệu tương quan công nghệ
 
@@ -2388,17 +2388,17 @@ class RedditDashboard:
         #         correlation_score DESC
         # """
         query = """
-                    SELECT
-                        tech_name_1,
-                        tech_name_2,
-                        correlation_score
-                    FROM
-                        reddit_data.tech_correlation
-                    WHERE
-                        correlation_score >= %s
-                    ORDER BY
-                        correlation_score DESC
-                """
+            SELECT
+                tech_name_1,
+                tech_name_2,
+                correlation_score
+            FROM
+                reddit_data.tech_correlation
+            WHERE
+                correlation_score >= %s
+            ORDER BY
+                correlation_score DESC
+        """
 
         # params = [start_date, end_date, threshold]
         params = [threshold]

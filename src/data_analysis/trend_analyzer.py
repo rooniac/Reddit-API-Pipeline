@@ -371,7 +371,7 @@ class TrendAnalyzer:
             conn.rollback()
             logger.error(f"Lỗi khi lưu công nghệ mới nổi vào database: {str(e)}")
 
-    def analyze_tech_correlation(self, min_mentions=10):
+    def analyze_tech_correlation(self, min_mentions=3):
         """
             Phân tích mối tương quan giữa các công nghệ (thường xuất hiện cùng nhau)
 
@@ -484,31 +484,38 @@ class TrendAnalyzer:
             if conn:
                 self.return_db_connection(conn)
 
+
     def _save_tech_correlation_to_db(self, correlation_matrix, conn):
         """
-            Lưu ma trận tương quan công nghệ vào database
+        Lưu ma trận tương quan công nghệ vào database
 
-            Args:
-                correlation_matrix (pandas.DataFrame): Ma trận tương quan
-                conn: Kết nối database
+        Args:
+            correlation_matrix (pandas.DataFrame): Ma trận tương quan
+            conn: Kết nối database
         """
+        if correlation_matrix.empty:
+            return
+
         try:
             cursor = conn.cursor()
-            # Xóa dữ liệu cũ
             analyzed_date = datetime.now().date()
-            cursor.execute("DELETE FROM reddit_data.tech_correlation WHERE analyzed_date = %s", (analyzed_date,))
+
+            # Xóa dữ liệu cũ
+            cursor.execute("DELETE FROM reddit_data.tech_correlation")
 
             # Chuẩn bị dữ liệu để insert
             tech_list = correlation_matrix.index.tolist()
             records = []
+            correlation_threshold = 0.05  # Ngưỡng mới
+
             for i in range(len(tech_list)):
-                for j in range(i + 1, len(tech_list)):  # Chỉ lưu nửa trên của ma trận
+                for j in range(i + 1, len(tech_list)):
                     tech_i = tech_list[i]
                     tech_j = tech_list[j]
                     correlation_score = correlation_matrix.loc[tech_i, tech_j]
 
                     # Chỉ lưu những cặp có tương quan đáng kể
-                    if correlation_score > 0.1:
+                    if correlation_score > correlation_threshold:
                         records.append((
                             tech_i,
                             tech_j,
@@ -516,14 +523,17 @@ class TrendAnalyzer:
                             analyzed_date
                         ))
 
-            psycopg2.extras.execute_batch(cursor, """
-                INSERT INTO reddit_data.tech_correlation
-                (tech_name_1, tech_name_2, correlation_score, analyzed_date)
-                VALUES (%s, %s, %s, %s)
-            """, records)
+            # Bulk insert
+            if records:
+                psycopg2.extras.execute_batch(cursor, """
+                    INSERT INTO reddit_data.tech_correlation
+                    (tech_name_1, tech_name_2, correlation_score, analyzed_date)
+                    VALUES (%s, %s, %s, %s)
+                """, records)
 
             conn.commit()
             logger.info(f"Đã lưu {len(records)} cặp tương quan công nghệ vào database")
+
         except Exception as e:
             conn.rollback()
             logger.error(f"Lỗi khi lưu tương quan công nghệ vào database: {str(e)}")
