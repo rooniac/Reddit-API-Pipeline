@@ -2165,7 +2165,7 @@ class RedditDashboard:
             try:
                 logger.info("Thử lại với cách truy vấn khác")
 
-                # Cách này không sử dụng tham số, mà nhúng giá trị trực tiếp vào query
+                #Nhúng giá trị trực tiếp vào query
                 query = f"""
                 WITH current_period AS (
                     SELECT

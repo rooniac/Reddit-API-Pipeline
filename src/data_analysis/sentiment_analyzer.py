@@ -501,8 +501,8 @@ class SentimentAnalyzer:
             cur = conn.cursor()
 
             cur.execute("""
-                            SELECT title, text FROM reddit_data.posts WHERE post_id = %s
-                        """, (post_id,))
+                SELECT title, text FROM reddit_data.posts WHERE post_id = %s
+            """, (post_id,))
             result = cur.fetchone()
 
             if not result:
@@ -522,8 +522,8 @@ class SentimentAnalyzer:
 
             # Lấy phân tích hiện có của bài viết để bổ sung thông tin
             cur.execute("""
-                    SELECT tech_mentioned FROM reddit_data.post_analysis WHERE post_id = %s
-                """, (post_id,))
+                SELECT tech_mentioned FROM reddit_data.post_analysis WHERE post_id = %s
+            """, (post_id,))
             existing_analysis = cur.fetchone()
 
             tech_mentioned = None
@@ -582,7 +582,6 @@ class SentimentAnalyzer:
         conn = None
         cur = None
         try:
-            # Lấy kết nối từ pool
             conn = self.get_db_connection()
             cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -596,7 +595,6 @@ class SentimentAnalyzer:
             cur.execute(query, post_ids)
             posts = cur.fetchall()
 
-            # Chuẩn bị batch để insert/update
             sentiment_results = []
 
             for post in posts:
@@ -619,14 +617,14 @@ class SentimentAnalyzer:
             # Bulk insert/update
             if sentiment_results:
                 psycopg2.extras.execute_batch(cur, """
-                            INSERT INTO reddit_data.post_analysis (
-                                post_id, sentiment_score
-                            ) VALUES (%s, %s)
-                            ON CONFLICT (post_id) 
-                            DO UPDATE SET 
-                                sentiment_score = EXCLUDED.sentiment_score,
-                                processed_date = CURRENT_TIMESTAMP
-                        """, sentiment_results)
+                    INSERT INTO reddit_data.post_analysis (
+                        post_id, sentiment_score
+                    ) VALUES (%s, %s)
+                    ON CONFLICT (post_id) 
+                    DO UPDATE SET 
+                        sentiment_score = EXCLUDED.sentiment_score,
+                        processed_date = CURRENT_TIMESTAMP
+                """, sentiment_results)
 
                 conn.commit()
 
@@ -657,7 +655,6 @@ class SentimentAnalyzer:
         conn = None
         cur = None
         try:
-            # Lấy kết nối từ pool
             conn = self.get_db_connection()
             cur = conn.cursor()
 
@@ -730,21 +727,19 @@ class SentimentAnalyzer:
         conn = None
         cur = None
         try:
-            # Lấy kết nối từ pool
             conn = self.get_db_connection()
             cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
             # Truy vấn nhiều bình luận cùng lúc
             placeholders = ','.join(['%s'] * len(comment_ids))
             query = f"""
-                        SELECT comment_id, body 
-                        FROM reddit_data.comments 
-                        WHERE comment_id IN ({placeholders})
-                    """
+                SELECT comment_id, body 
+                FROM reddit_data.comments 
+                WHERE comment_id IN ({placeholders})
+            """
             cur.execute(query, comment_ids)
             comments = cur.fetchall()
 
-            # Chuẩn bị batch để insert/update
             sentiment_results = []
 
             for comment in comments:
@@ -762,14 +757,14 @@ class SentimentAnalyzer:
             # Bulk insert/update
             if sentiment_results:
                 psycopg2.extras.execute_batch(cur, """
-                        INSERT INTO reddit_data.comment_analysis (
-                            comment_id, sentiment_score
-                        ) VALUES (%s, %s)
-                        ON CONFLICT (comment_id) 
-                        DO UPDATE SET 
-                            sentiment_score = EXCLUDED.sentiment_score,
-                            processed_date = CURRENT_TIMESTAMP
-                    """, sentiment_results)
+                    INSERT INTO reddit_data.comment_analysis (
+                        comment_id, sentiment_score
+                    ) VALUES (%s, %s)
+                    ON CONFLICT (comment_id) 
+                    DO UPDATE SET 
+                        sentiment_score = EXCLUDED.sentiment_score,
+                        processed_date = CURRENT_TIMESTAMP
+                """, sentiment_results)
 
                 conn.commit()
 
@@ -800,17 +795,16 @@ class SentimentAnalyzer:
         conn = None
         cur = None
         try:
-            # Lấy kết nối từ pool
             conn = self.get_db_connection()
             cur = conn.cursor()
 
             # Tìm các bài viết nhắc đến công nghệ này
             cur.execute("""
-                        SELECT p.post_id, p.title, p.text, p.created_date
-                        FROM reddit_data.posts p
-                        JOIN reddit_data.post_analysis pa ON p.post_id = pa.post_id
-                        WHERE %s = ANY(pa.tech_mentioned)
-                    """, (tech_name,))
+                SELECT p.post_id, p.title, p.text, p.created_date
+                FROM reddit_data.posts p
+                JOIN reddit_data.post_analysis pa ON p.post_id = pa.post_id
+                WHERE %s = ANY(pa.tech_mentioned)
+            """, (tech_name,))
 
             posts = cur.fetchall()
 
@@ -1064,10 +1058,10 @@ class SentimentAnalyzer:
             cur = conn.cursor()
 
             cur.execute("""
-                            SELECT DISTINCT unnest(tech_mentioned)
-                            FROM reddit_data.post_analysis
-                            WHERE tech_mentioned IS NOT NULL
-                        """)
+                SELECT DISTINCT unnest(tech_mentioned)
+                FROM reddit_data.post_analysis
+                WHERE tech_mentioned IS NOT NULL
+            """)
 
             technologies = [row[0] for row in cur.fetchall()]
 

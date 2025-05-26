@@ -30,10 +30,8 @@ def main():
 
     dashboard = None
     try:
-        # Khởi tạo dashboard
         dashboard = RedditDashboard(debug=args.debug)
 
-        # Chạy server Dash (sử dụng app.run thay vì app.run_server)
         logger.info(f"Chạy dashboard trên {args.host}:{args.port}")
         dashboard.run_server(host=args.host, port=args.port, debug=args.debug)
 
@@ -42,7 +40,6 @@ def main():
         # In ra stack trace để giúp debug
         logger.error(traceback.format_exc())
     finally:
-        # Đảm bảo đóng mọi kết nối
         if dashboard:
             dashboard.shutdown()
 
